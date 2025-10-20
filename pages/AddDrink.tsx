@@ -8,9 +8,7 @@ const AddDrink = () => {
   return (
     <SafeAreaView style={styles.container}>
       {/* Image Placeholder */}
-      <View style={styles.imagePlaceholder}>
-        <Text style={styles.placeholderText}>No Image Selected</Text>
-      </View>
+      <Image source={require("../assets/boba.jpg")} style={styles.imagePlaceholder} />
 
       {/* Photo Buttons */}
       <View style={styles.buttonRow}>
