@@ -1,89 +1,66 @@
 import React from 'react';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { View, Text, Image, Platform } from 'react-native';
-import Gallery from '../pages/Gallery';
-import AddDrink from '../pages/AddDrink';
-import Stats from '../pages/Stats';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import AntDesign from '@expo/vector-icons/AntDesign';
 
-const Tab = createBottomTabNavigator();
-
 // @ts-ignore
-const TabIcon = ({ source, label, focused }) => (
-  <View style={{ alignItems: 'center', justifyContent: 'center', paddingTop: 10 }}>
-    <Image
-      source={source}
-      style={{
-        width: 20,
-        height: 20,
-        tintColor: focused ? 'red' : '#777',
-        resizeMode: 'contain',
-        marginTop: Platform.OS === 'web' ? 5 : 24,
-      }}
-    />
-    <Text
-      style={{
-        fontSize: 10,
-        color: focused ? 'red' : '#777',
-        textAlign: 'center',
-        marginTop: 4,
-        width:100
-      }}
-    >
-      {label}
-    </Text>
+export default function BottomBar({ state, navigation }) {
+  const activeRouteName = state.routes[state.index].name;
 
-    <View
-      style={{
-        height: 3,
-        width: 100,
-        backgroundColor: focused ? 'red' : 'transparent',
-        marginTop: 6,
-        borderRadius: 1,
-      }}
-    />
-  </View>
-);
-
-
-
-export default function BottomTabNavigator() {
   return (
+    <View style={styles.bottomBar}>
+      <TouchableOpacity onPress={() => navigation.navigate('Gallery')}>
+        <View style={styles.tabItem}>
+          <AntDesign style={styles.icon} name="home" size={24} color={activeRouteName === 'Gallery' ? 'orange' : 'white'} />
+          <Text style={{ color: activeRouteName === 'Gallery' ? 'orange' : 'white' }}>Home</Text>
+        </View>
+      </TouchableOpacity>
 
-    <Tab.Navigator screenOptions={{
-      headerShown: false,
-      tabBarShowLabel: false,
-      tabBarStyle: {
-        height: 60, // Adjust height here
-      },
-    }}>
-      <Tab.Screen
-        name="Home"
-        component={Gallery}
-        options={{
-          tabBarIcon: ({ color, size }) => (
-            <AntDesign name="home" color={color} size={size} />
-          ),
-        }}
-      />
-      <Tab.Screen
-        name="Task"
-        component={AddDrink}
-        options={{
-          tabBarIcon: ({ color, size }) => (
-            <AntDesign name="home" color={color} size={size} />
-          ),
-        }}
-      />
-      <Tab.Screen
-        name="Report"
-        component={Stats}
-        options={{
-          tabBarIcon: ({ color, size }) => (
-            <AntDesign name="home" color={color} size={size} />
-          ),
-        }}
-      />
-    </Tab.Navigator>
+      <TouchableOpacity onPress={() => navigation.navigate('AddDrink')}>
+        <View style={styles.tabItem}>
+          <AntDesign style={styles.icon} name="plus-circle" size={24} color={activeRouteName === 'AddDrink' ? 'orange' : 'white'} />
+          <Text style={{ color: activeRouteName === 'AddDrink' ? 'orange' : 'white' }}>Add Boba</Text>
+        </View>
+      </TouchableOpacity>
+
+      <TouchableOpacity onPress={() => navigation.navigate('Stats')}>
+        <View style={styles.tabItem}>
+          <AntDesign style={styles.icon} name="line-chart" size={24} color={activeRouteName === 'Stats' ? 'orange' : 'white'} />
+          <Text style={{ color: activeRouteName === 'Stats' ? 'orange' : 'white' }}>Stats</Text>
+        </View>
+      </TouchableOpacity>
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  bottomBar: {
+    display: 'flex',
+    flexDirection: 'row',
+    position: 'absolute',
+    bottom: 25,
+    left: 20,
+    right: 20,
+    backgroundColor: "#583B39",
+    borderRadius: 20,
+    height: 80,
+    paddingHorizontal: 10,
+    // Shadow styles
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+  },
+
+  tabItem: {
+    display: 'flex',
+    marginHorizontal: 32,
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  icon: {
+    paddingVertical: 10,
+  }
+});
