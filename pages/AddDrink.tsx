@@ -4,7 +4,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 const AddDrink = () => {
   const [selectedRating, setSelectedRating] = useState<number | null>(null);
-
+  const [flavorText, setFlavorText] = useState<string | null>(null);
+  const [price, setPrice] = useState<number | null>(null);
+  const [occasion, setOccasion] = useState<string | null>(null);
+  const [store, setStore] = useState<string | null>(null);
   return (
     <SafeAreaView style={styles.container}>
       {/* Image Placeholder */}
@@ -27,6 +30,7 @@ const AddDrink = () => {
         style={styles.input}
         placeholder="e.g. Strawberry Matcha Latte"
         placeholderTextColor="#999"
+        onChangeText={newFlavor => setFlavorText(newFlavor)}
       />
 
       {/* Price Input */}
@@ -36,6 +40,10 @@ const AddDrink = () => {
         placeholder="e.g. $00.00"
         placeholderTextColor="#999"
         keyboardType="numeric"
+        onChangeText={text => {
+          const numericPrice = parseFloat(text);
+          setPrice(isNaN(numericPrice) ? 0 : numericPrice);
+        }}
       />
 
       {/* Store Input */}
@@ -44,6 +52,7 @@ const AddDrink = () => {
         style={styles.input}
         placeholder="e.g. Tsaocaa"
         placeholderTextColor="#999"
+        onChangeText={newStore => setStore(newStore)}
       />
 
       {/* Occasion Input */}
@@ -52,6 +61,7 @@ const AddDrink = () => {
         style={styles.input}
         placeholder="e.g. Celebrating that I passed my exam!"
         placeholderTextColor="#999"
+        onChangeText={newOccasion => setOccasion(newOccasion)}
       />
 
       {/* Rating */}
