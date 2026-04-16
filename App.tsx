@@ -68,20 +68,20 @@ const AuthenticatedApp: React.FC<{ isLocalUser: boolean }> = ({ isLocalUser }) =
   }, [isLocalUser]);
 
   return (
-      <LocalUserProvider>
-        <DatabaseProvider database={database}>
-          <SafeAreaProvider>
-            <NavigationContainer>
-              <Stack.Navigator screenOptions={{ headerShown: false }}>
-                <Stack.Screen name="MainTabs" component={MainTabs} />
-                <Stack.Screen name="DrinkDetail" component={DrinkDetail} />
-                <Stack.Screen name="EditDrink" component={EditDrink} />
-                <Stack.Screen name="Profile" component={Profile} />
-              </Stack.Navigator>
-            </NavigationContainer>
-          </SafeAreaProvider>
-        </DatabaseProvider>
-      </LocalUserProvider>
+    <LocalUserProvider>
+      <DatabaseProvider database={database}>
+        <SafeAreaProvider>
+          <NavigationContainer>
+            <Stack.Navigator screenOptions={{ headerShown: false }}>
+              <Stack.Screen name="MainTabs" component={MainTabs} />
+              <Stack.Screen name="DrinkDetail" component={DrinkDetail} />
+              <Stack.Screen name="EditDrink" component={EditDrink} />
+              <Stack.Screen name="Profile" component={Profile} />
+            </Stack.Navigator>
+          </NavigationContainer>
+        </SafeAreaProvider>
+      </DatabaseProvider>
+    </LocalUserProvider>
   );
 };
 

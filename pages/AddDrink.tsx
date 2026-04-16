@@ -3,10 +3,10 @@ import { Image, StyleSheet, Text, TouchableOpacity, View, Alert, ScrollView } fr
 import * as ImagePicker from 'expo-image-picker';
 import database from '../database/index.native';
 import Drink from '../database/model/Drink';
-import { uploadImage , syncToCloud , getPlaceDetails, PlacePrediction } from '../services';
+import { uploadImage, syncToCloud, getPlaceDetails, PlacePrediction } from '../services';
 import { useCurrentUser } from '../hooks';
 import { FormField, Button, StoreAutocomplete, GradientBackground } from '../components';
-import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS , RATINGS, DEFAULT_IMAGES } from '@/constants';
+import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS, RATINGS, DEFAULT_IMAGES } from '@/constants';
 import type { DrinkForm } from '@/types';
 
 const INITIAL_FORM: DrinkForm = {

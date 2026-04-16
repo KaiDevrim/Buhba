@@ -7,7 +7,6 @@ import { isLocalUser } from '@/utils/localUser';
 
 const BACKUP_FILE = 'backup/drinks.json';
 
-
 /**
  * Get the current user's identity ID
  */

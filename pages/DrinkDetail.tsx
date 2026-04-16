@@ -8,7 +8,7 @@ import Drink from '../database/model/Drink';
 import { RootStackParamList } from '@/types';
 import { useS3Image } from '../hooks';
 import { LoadingState, DetailRow, Button, GradientBackground } from '../components';
-import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS , RATING_EMOJIS } from '@/constants';
+import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS, RATING_EMOJIS } from '@/constants';
 
 // Placeholder blur hash for loading state
 const PLACEHOLDER_BLURHASH = 'L6PZfSi_.AyE_3t7t7R**0LMD%s:';

@@ -15,4 +15,3 @@ export const setLocalUserFlag = async (): Promise<void> => {
 export const clearLocalUserFlag = async (): Promise<void> => {
   await AsyncStorage.removeItem(LOCAL_USER_KEY);
 };
-

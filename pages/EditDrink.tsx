@@ -6,8 +6,8 @@ import { StackNavigationProp } from '@react-navigation/stack';
 import * as ImagePicker from 'expo-image-picker';
 import database from '../database/index.native';
 import Drink from '../database/model/Drink';
-import { uploadImage, deleteImage , syncToCloud } from '../services';
-import { useCurrentUser , useS3Image } from '../hooks';
+import { uploadImage, deleteImage, syncToCloud } from '../services';
+import { useCurrentUser, useS3Image } from '../hooks';
 import {
   FormField,
   Button,
@@ -15,7 +15,7 @@ import {
   StoreAutocomplete,
   GradientBackground,
 } from '../components';
-import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS , RATINGS } from '@/constants';
+import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS, RATINGS } from '@/constants';
 import { RootStackParamList } from '@/types';
 import type { DrinkForm } from '@/types';
 

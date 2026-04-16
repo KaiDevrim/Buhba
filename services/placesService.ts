@@ -84,14 +84,12 @@ export const searchBobaPlaces = async (
       return [];
     }
 
-    return (data.places || [])
-      .filter(Boolean)
-      .map((place: Record<string, unknown>) => ({
-        placeId: (place?.id as string) || '',
-        name: (place?.displayName as Record<string, string> | undefined)?.text || '',
-        address: (place?.formattedAddress as string) || '',
-        distance: undefined,
-      }));
+    return (data.places || []).filter(Boolean).map((place: Record<string, unknown>) => ({
+      placeId: (place?.id as string) || '',
+      name: (place?.displayName as Record<string, string> | undefined)?.text || '',
+      address: (place?.formattedAddress as string) || '',
+      distance: undefined,
+    }));
   } catch (error) {
     if (__DEV__) {
       console.error('Error searching places:', error);
@@ -185,14 +183,12 @@ export const searchNearbyBobaPlaces = async (location: Coordinates): Promise<Pla
       return [];
     }
 
-    return (data.places || [])
-      .filter(Boolean)
-      .map((place: Record<string, unknown>) => ({
-        placeId: (place?.id as string) || '',
-        name: (place?.displayName as Record<string, string> | undefined)?.text || '',
-        address: (place?.formattedAddress as string) || '',
-        distance: undefined,
-      }));
+    return (data.places || []).filter(Boolean).map((place: Record<string, unknown>) => ({
+      placeId: (place?.id as string) || '',
+      name: (place?.displayName as Record<string, string> | undefined)?.text || '',
+      address: (place?.formattedAddress as string) || '',
+      distance: undefined,
+    }));
   } catch (error) {
     if (__DEV__) {
       console.error('Error searching nearby places:', error);

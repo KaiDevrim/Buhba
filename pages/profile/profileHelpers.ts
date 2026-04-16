@@ -84,4 +84,3 @@ export const clearLocalDrinks = async (): Promise<void> => {
     }
   });
 };
-
