@@ -1,5 +1,5 @@
 import { Coordinates } from './locationService';
-import { getGooglePlacesApiKey } from '../src/config/secrets';
+import { getGooglePlacesApiKey } from '@/config';
 
 export interface PlacePrediction {
   placeId: string;
@@ -45,11 +45,6 @@ export const searchBobaPlaces = async (
     return [];
   }
 
-  // Debug: Log that API key is present (never log the actual key)
-  if (__DEV__) {
-    console.log('🔑 Google Places API key configured:', apiKey);
-  }
-
   try {
     const requestBody: Record<string, unknown> = {
       textQuery: `${query} boba tea`,
@@ -89,12 +84,14 @@ export const searchBobaPlaces = async (
       return [];
     }
 
-    return (data.places || []).map((place: Record<string, unknown>) => ({
-      placeId: (place.id as string) || '',
-      name: (place.displayName as Record<string, string>)?.text || '',
-      address: (place.formattedAddress as string) || '',
-      distance: undefined,
-    }));
+    return (data.places || [])
+      .filter(Boolean)
+      .map((place: Record<string, unknown>) => ({
+        placeId: (place?.id as string) || '',
+        name: (place?.displayName as Record<string, string> | undefined)?.text || '',
+        address: (place?.formattedAddress as string) || '',
+        distance: undefined,
+      }));
   } catch (error) {
     if (__DEV__) {
       console.error('Error searching places:', error);
@@ -188,12 +185,14 @@ export const searchNearbyBobaPlaces = async (location: Coordinates): Promise<Pla
       return [];
     }
 
-    return (data.places || []).map((place: Record<string, unknown>) => ({
-      placeId: (place.id as string) || '',
-      name: (place.displayName as Record<string, string>)?.text || '',
-      address: (place.formattedAddress as string) || '',
-      distance: undefined,
-    }));
+    return (data.places || [])
+      .filter(Boolean)
+      .map((place: Record<string, unknown>) => ({
+        placeId: (place?.id as string) || '',
+        name: (place?.displayName as Record<string, string> | undefined)?.text || '',
+        address: (place?.formattedAddress as string) || '',
+        distance: undefined,
+      }));
   } catch (error) {
     if (__DEV__) {
       console.error('Error searching nearby places:', error);
@@ -251,16 +250,22 @@ export const searchNearbyBobaShops = async (location: Coordinates): Promise<Near
     }
 
     return (data.places || [])
+      .filter(Boolean)
       .filter((place: Record<string, unknown>) => {
         const loc = place.location as Record<string, number> | undefined;
-        return loc?.latitude && loc?.longitude;
+        return (
+          typeof loc?.latitude === 'number' &&
+          typeof loc?.longitude === 'number' &&
+          Number.isFinite(loc.latitude) &&
+          Number.isFinite(loc.longitude)
+        );
       })
       .map((place: Record<string, unknown>) => {
         const loc = place.location as Record<string, number>;
         return {
-          placeId: (place.id as string) || '',
-          name: (place.displayName as Record<string, string>)?.text || '',
-          address: (place.formattedAddress as string) || '',
+          placeId: (place?.id as string) || '',
+          name: (place?.displayName as Record<string, string> | undefined)?.text || '',
+          address: (place?.formattedAddress as string) || '',
           latitude: loc.latitude,
           longitude: loc.longitude,
         };

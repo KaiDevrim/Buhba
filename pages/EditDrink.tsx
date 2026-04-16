@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect, memo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View, Alert, ScrollView } from 'react-native';
 import { Image } from 'expo-image';
 import { RouteProp, useRoute, useNavigation } from '@react-navigation/native';
@@ -6,10 +6,8 @@ import { StackNavigationProp } from '@react-navigation/stack';
 import * as ImagePicker from 'expo-image-picker';
 import database from '../database/index.native';
 import Drink from '../database/model/Drink';
-import { uploadImage, deleteImage } from '../services/storageService';
-import { syncToCloud } from '../services/syncService';
-import { useCurrentUser } from '../hooks/useCurrentUser';
-import { useS3Image } from '../hooks/useS3Image';
+import { uploadImage, deleteImage , syncToCloud } from '../services';
+import { useCurrentUser , useS3Image } from '../hooks';
 import {
   FormField,
   Button,
@@ -17,10 +15,9 @@ import {
   StoreAutocomplete,
   GradientBackground,
 } from '../components';
-import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS } from '../src/constants/theme';
-import { RATINGS } from '../src/constants';
-import { RootStackParamList } from '../src/types/navigation';
-import type { DrinkForm } from '../src/types';
+import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS , RATINGS } from '@/constants';
+import { RootStackParamList } from '@/types';
+import type { DrinkForm } from '@/types';
 
 const PLACEHOLDER_BLURHASH = 'L6PZfSi_.AyE_3t7t7R**0LMD%s:';
 
@@ -80,9 +77,9 @@ const EditDrink: React.FC = () => {
     fetchDrink();
   }, [drinkId, navigation]);
 
-  const updateField = useCallback(<K extends keyof DrinkForm>(field: K, value: DrinkForm[K]) => {
+  const updateField = <K extends keyof DrinkForm>(field: K, value: DrinkForm[K]) => {
     setForm((prev) => ({ ...prev, [field]: value }));
-  }, []);
+  };
 
   const validateForm = (): string | null => {
     if (!form.flavor.trim()) return 'Please enter a flavor';
@@ -355,7 +352,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     alignItems: 'center',
     paddingHorizontal: SPACING.xl,
-    paddingTop: SPACING.lg,
+    paddingTop: 80,
     paddingBottom: 100,
   },
   title: {
@@ -423,4 +420,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default memo(EditDrink);
+export default EditDrink;

@@ -1,15 +1,14 @@
-import React, { useEffect, useState, memo } from 'react';
+import React, { useEffect, useState } from 'react';
 import { StyleSheet, Text, View, ScrollView } from 'react-native';
 import { Image } from 'expo-image';
 import { RouteProp, useRoute, useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import database from '../database/index.native';
 import Drink from '../database/model/Drink';
-import { RootStackParamList } from '../src/types/navigation';
-import { useS3Image } from '../hooks/useS3Image';
+import { RootStackParamList } from '@/types';
+import { useS3Image } from '../hooks';
 import { LoadingState, DetailRow, Button, GradientBackground } from '../components';
-import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS } from '../src/constants/theme';
-import { RATING_EMOJIS } from '../src/constants';
+import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS , RATING_EMOJIS } from '@/constants';
 
 // Placeholder blur hash for loading state
 const PLACEHOLDER_BLURHASH = 'L6PZfSi_.AyE_3t7t7R**0LMD%s:';
@@ -96,7 +95,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     alignItems: 'center',
     paddingHorizontal: SPACING.xl,
-    paddingTop: SPACING.xl,
+    paddingTop: 80,
     paddingBottom: 100,
   },
   loadingContainer: {
@@ -136,4 +135,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default memo(DrinkDetail);
+export default DrinkDetail;

@@ -1,13 +1,13 @@
-import React, { useCallback, useState, useMemo, memo } from 'react';
+import React, { useCallback, useState, useMemo } from 'react';
 import { View, FlatList, StyleSheet, TouchableOpacity, Text } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import database from '../database/index.native';
 import Drink from '../database/model/Drink';
 import { MyDrinkCard, GradientBackground } from '../components';
-import { RootStackParamList } from '../src/types/navigation';
-import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS, SHADOWS } from '../src/constants/theme';
-import { prefetchImages } from '../services/imageCacheService';
+import { RootStackParamList } from '@/types';
+import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS, SHADOWS } from '@/constants';
+import { prefetchImages } from '../services';
 
 interface MonthlyStats {
   drinkCount: number;
@@ -258,4 +258,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default memo(Gallery);
+export default Gallery;

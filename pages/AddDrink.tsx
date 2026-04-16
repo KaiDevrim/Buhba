@@ -1,16 +1,13 @@
-import React, { useState, useCallback, memo } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Image, StyleSheet, Text, TouchableOpacity, View, Alert, ScrollView } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import database from '../database/index.native';
 import Drink from '../database/model/Drink';
-import { uploadImage } from '../services/storageService';
-import { syncToCloud } from '../services/syncService';
-import { getPlaceDetails, PlacePrediction } from '../services/placesService';
-import { useCurrentUser } from '../hooks/useCurrentUser';
+import { uploadImage , syncToCloud , getPlaceDetails, PlacePrediction } from '../services';
+import { useCurrentUser } from '../hooks';
 import { FormField, Button, StoreAutocomplete, GradientBackground } from '../components';
-import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS } from '../src/constants/theme';
-import { RATINGS, DEFAULT_IMAGES } from '../src/constants';
-import type { DrinkForm } from '../src/types';
+import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS , RATINGS, DEFAULT_IMAGES } from '@/constants';
+import type { DrinkForm } from '@/types';
 
 const INITIAL_FORM: DrinkForm = {
   flavor: '',
@@ -29,9 +26,9 @@ const AddDrink: React.FC = () => {
   const [saving, setSaving] = useState(false);
   const { user } = useCurrentUser();
 
-  const updateField = useCallback(<K extends keyof DrinkForm>(field: K, value: DrinkForm[K]) => {
+  const updateField = <K extends keyof DrinkForm>(field: K, value: DrinkForm[K]) => {
     setForm((prev) => ({ ...prev, [field]: value }));
-  }, []);
+  };
 
   // Handle store selection from autocomplete
   const handleStoreSelect = useCallback(async (store: PlacePrediction) => {
@@ -222,7 +219,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     alignItems: 'center',
     paddingHorizontal: SPACING.xl,
-    paddingTop: SPACING.xl,
+    paddingTop: 80,
     paddingBottom: 100,
   },
   imagePlaceholder: {
@@ -271,4 +268,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default memo(AddDrink);
+export default AddDrink;

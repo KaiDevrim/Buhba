@@ -1,20 +1,12 @@
 import { uploadData, downloadData } from 'aws-amplify/storage';
 import { fetchAuthSession } from 'aws-amplify/auth';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import database from '../database/index.native';
 import Drink from '../database/model/Drink';
-import type { DrinkData } from '../src/types';
+import type { DrinkData } from '@/types';
+import { isLocalUser } from '@/utils/localUser';
 
 const BACKUP_FILE = 'backup/drinks.json';
-const LOCAL_USER_KEY = '@bobapal:isLocalUser';
 
-/**
- * Check if the current user is in local mode
- */
-const isLocalUser = async (): Promise<boolean> => {
-  const value = await AsyncStorage.getItem(LOCAL_USER_KEY);
-  return value === 'true';
-};
 
 /**
  * Get the current user's identity ID

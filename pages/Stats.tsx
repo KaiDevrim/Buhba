@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState, memo } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { StyleSheet, Text, View, ScrollView } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import database from '../database/index.native';
@@ -10,8 +10,8 @@ import {
   VisitedLocation,
   GradientBackground,
 } from '../components';
-import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS } from '../src/constants/theme';
-import type { StatsData } from '../src/types';
+import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS } from '@/constants';
+import type { StatsData } from '@/types';
 
 const formatCurrency = (value: number) =>
   new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value);
@@ -63,7 +63,7 @@ const Stats: React.FC = () => {
     >();
 
     drinks.forEach((drink) => {
-      if (drink.latitude && drink.longitude) {
+      if (drink.latitude != null && drink.longitude != null) {
         const key = drink.placeId || `${drink.latitude},${drink.longitude}`;
         const existing = locationMap.get(key);
 
@@ -129,7 +129,7 @@ const Stats: React.FC = () => {
 const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: SPACING.xl,
-    paddingTop: SPACING.xl,
+    paddingTop: 80,
     paddingBottom: SPACING.xxl * 2,
   },
   title: {
@@ -168,4 +168,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default memo(Stats);
+export default Stats;

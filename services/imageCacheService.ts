@@ -1,6 +1,6 @@
 import { Image } from 'expo-image';
 import { getImageUrl } from './storageService';
-import { CACHE_DURATION_MS } from '../src/constants';
+import { CACHE_DURATION_MS } from '@/constants';
 
 interface CacheEntry {
   url: string;

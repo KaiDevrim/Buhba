@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { getCachedImageUrl } from '../services/imageCacheService';
+import { getCachedImageUrl } from '../services';
 
 interface UseS3ImageResult {
   imageUrl: string | null;

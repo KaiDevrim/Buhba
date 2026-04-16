@@ -92,17 +92,6 @@ jest.mock('@nozbe/watermelondb', () => ({
   },
 }));
 
-jest.mock('@nozbe/watermelondb/react', () => {
-  const React = require('react');
-  return {
-    __esModule: true,
-    DatabaseProvider: ({ children }) => children,
-    DatabaseContext: React.createContext(null),
-    useDatabase: jest.fn(() => null),
-    withDatabase: (Component) => Component,
-  };
-});
-
 jest.mock('@nozbe/watermelondb/DatabaseProvider', () => {
   const React = require('react');
   return {

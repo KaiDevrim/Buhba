@@ -1,21 +1,11 @@
 import { uploadData, getUrl, remove } from 'aws-amplify/storage';
 import { fetchAuthSession } from 'aws-amplify/auth';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { isLocalUser, LOCAL_USER_ID } from '@/utils/localUser';
 
 interface UploadResult {
   s3Key: string;
   url: string;
 }
-
-const LOCAL_USER_KEY = '@bobapal:isLocalUser';
-
-/**
- * Check if the current user is in local mode
- */
-const isLocalUser = async (): Promise<boolean> => {
-  const value = await AsyncStorage.getItem(LOCAL_USER_KEY);
-  return value === 'true';
-};
 
 /**
  * Get the current user's identity ID
@@ -23,7 +13,7 @@ const isLocalUser = async (): Promise<boolean> => {
 export const getIdentityId = async (): Promise<string> => {
   // For local users, return a placeholder
   if (await isLocalUser()) {
-    return 'local-user';
+    return LOCAL_USER_ID;
   }
 
   const session = await fetchAuthSession();

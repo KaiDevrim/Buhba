@@ -1,4 +1,4 @@
-import React, { useEffect, useState, memo, useCallback } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -11,112 +11,31 @@ import {
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
-import { signOut, deleteUser, getCurrentUser, fetchAuthSession } from 'aws-amplify/auth';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { signOut, deleteUser } from 'aws-amplify/auth';
 
 import { GradientBackground } from '../components';
-import { RootStackParamList } from '../src/types/navigation';
-import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS, SHADOWS } from '../src/constants/theme';
-
-interface UserInfo {
-  email: string | null;
-  signInMethod: string;
-  userId: string;
-  isLocalUser: boolean;
-}
+import { RootStackParamList } from '@/types';
+import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS, SHADOWS } from '@/constants';
+import { clearLocalUserFlag } from '@/utils/localUser';
+import { clearLocalDrinks, fetchProfileUserInfo, ProfileUserInfo } from './profile/profileHelpers';
 
 const PRIVACY_POLICY_URL = 'https://github.com/KaiDevrim/BobaPal/blob/main/PRIVACY_POLICY.md';
 const CONTACT_EMAIL = 'support@devrim.tech';
-const LOCAL_USER_KEY = '@bobapal:isLocalUser';
 
 const Profile: React.FC = () => {
   const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
-  const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
+  const [userInfo, setUserInfo] = useState<ProfileUserInfo | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
-    const fetchUserInfo = async () => {
+    const loadProfile = async () => {
       try {
-        // Check if user is in local mode
-        const isLocalUserValue = await AsyncStorage.getItem(LOCAL_USER_KEY);
-        if (isLocalUserValue === 'true') {
-          setUserInfo({
-            email: null,
-            signInMethod: 'Local',
-            userId: 'local-user',
-            isLocalUser: true,
-          });
-          setIsLoading(false);
-          return;
-        }
-
-        const user = await getCurrentUser();
-        const session = await fetchAuthSession();
-
-        // Get user info from ID token payload
-        const idToken = session.tokens?.idToken;
-        let email: string | null = null;
-        let signInMethod = 'Email';
-
-        if (idToken) {
-          const payload = idToken.payload;
-          email = (payload.email as string) || null;
-
-          // Check for social provider in identities or cognito:username
-          const identities = payload.identities as string | undefined;
-          const username = payload['cognito:username'] as string | undefined;
-
-          if (identities) {
-            try {
-              const parsedIdentities = JSON.parse(identities);
-              if (parsedIdentities.length > 0) {
-                const provider = parsedIdentities[0].providerName;
-                if (provider === 'Google') {
-                  signInMethod = 'Google';
-                } else if (provider === 'Facebook') {
-                  signInMethod = 'Facebook';
-                } else if (provider === 'SignInWithApple') {
-                  signInMethod = 'Apple';
-                } else {
-                  signInMethod = provider || 'Social';
-                }
-              }
-            } catch {
-              // If parsing fails, check username pattern
-            }
-          }
-
-          // Fallback: check if username starts with Google_
-          if (signInMethod === 'Email' && username) {
-            if (username.startsWith('Google_') || username.startsWith('google_')) {
-              signInMethod = 'Google';
-            } else if (username.startsWith('Facebook_') || username.startsWith('facebook_')) {
-              signInMethod = 'Facebook';
-            } else if (username.startsWith('SignInWithApple_') || username.startsWith('apple_')) {
-              signInMethod = 'Apple';
-            }
-          }
-        }
-
-        setUserInfo({
-          email,
-          signInMethod,
-          userId: user.userId,
-          isLocalUser: false,
-        });
+        const info = await fetchProfileUserInfo();
+        setUserInfo(info);
       } catch (error) {
-        // If we can't get user info, check if local user
-        const isLocalUserValue = await AsyncStorage.getItem(LOCAL_USER_KEY);
-        if (isLocalUserValue === 'true') {
-          setUserInfo({
-            email: null,
-            signInMethod: 'Local',
-            userId: 'local-user',
-            isLocalUser: true,
-          });
-        } else if (__DEV__) {
+        if (__DEV__) {
           console.error('Failed to fetch user info:', error);
         }
       } finally {
@@ -124,10 +43,10 @@ const Profile: React.FC = () => {
       }
     };
 
-    fetchUserInfo();
+    loadProfile();
   }, []);
 
-  const handleSignOut = useCallback(async () => {
+  const handleSignOut = () => {
     const isLocal = userInfo?.isLocalUser;
     const message = isLocal
       ? 'Are you sure you want to sign out? Your local data will be preserved.'
@@ -142,10 +61,7 @@ const Profile: React.FC = () => {
           setIsSigningOut(true);
           try {
             if (isLocal) {
-              // Clear local user flag
-              await AsyncStorage.removeItem(LOCAL_USER_KEY);
-              // Force app to re-render by reloading
-              // The auth state will be updated automatically
+              await clearLocalUserFlag();
             } else {
               await signOut();
             }
@@ -160,9 +76,9 @@ const Profile: React.FC = () => {
         },
       },
     ]);
-  }, [userInfo?.isLocalUser]);
+  };
 
-  const handleDeleteAccount = useCallback(async () => {
+  const handleDeleteAccount = () => {
     const isLocal = userInfo?.isLocalUser;
     const message = isLocal
       ? 'Are you sure you want to delete all local data? This action cannot be undone.'
@@ -188,8 +104,8 @@ const Profile: React.FC = () => {
                   setIsDeleting(true);
                   try {
                     if (isLocal) {
-                      // Clear local user flag and data
-                      await AsyncStorage.removeItem(LOCAL_USER_KEY);
+                      await clearLocalDrinks();
+                      await clearLocalUserFlag();
                       Alert.alert('Data Deleted', 'Your local data has been deleted.');
                     } else {
                       await deleteUser();
@@ -210,27 +126,27 @@ const Profile: React.FC = () => {
         },
       },
     ]);
-  }, [userInfo?.isLocalUser]);
+  };
 
-  const handlePrivacyPolicy = useCallback(async () => {
+  const handlePrivacyPolicy = async () => {
     try {
       await Linking.openURL(PRIVACY_POLICY_URL);
     } catch {
       Alert.alert('Error', 'Could not open privacy policy.');
     }
-  }, []);
+  };
 
-  const handleContact = useCallback(async () => {
+  const handleContact = async () => {
     try {
       await Linking.openURL(`mailto:${CONTACT_EMAIL}?subject=BobaPal%20Support`);
     } catch {
       Alert.alert('Contact Us', `Email us at ${CONTACT_EMAIL}`);
     }
-  }, []);
+  };
 
-  const handleBack = useCallback(() => {
+  const handleBack = () => {
     navigation.goBack();
-  }, [navigation]);
+  };
 
   if (isLoading) {
     return (
@@ -245,7 +161,6 @@ const Profile: React.FC = () => {
   return (
     <GradientBackground>
       <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-        {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity onPress={handleBack} style={styles.backButton}>
             <Text style={styles.backButtonText}>← Back</Text>
@@ -254,7 +169,6 @@ const Profile: React.FC = () => {
           <View style={styles.placeholder} />
         </View>
 
-        {/* User Info Section */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Account Information</Text>
 
@@ -289,7 +203,6 @@ const Profile: React.FC = () => {
           </View>
         </View>
 
-        {/* Links Section */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Support</Text>
 
@@ -304,7 +217,6 @@ const Profile: React.FC = () => {
           </TouchableOpacity>
         </View>
 
-        {/* Actions Section */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Account Actions</Text>
 
@@ -333,7 +245,6 @@ const Profile: React.FC = () => {
           </TouchableOpacity>
         </View>
 
-        {/* App Info */}
         <View style={styles.footer}>
           <Text style={styles.footerText}>BobaPal v1.0.0</Text>
           <Text style={styles.footerSubtext}>Made with 🧋 by Devrim</Text>
@@ -349,7 +260,7 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingHorizontal: SPACING.lg,
-    paddingTop: 60,
+    paddingTop: 80,
     paddingBottom: 40,
   },
   loadingContainer: {
@@ -506,4 +417,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default memo(Profile);
+export default Profile;

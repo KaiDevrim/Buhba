@@ -1,7 +1,9 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-
-const LOCAL_USER_KEY = '@bobapal:isLocalUser';
+import {
+  clearLocalUserFlag,
+  isLocalUser as readLocalUserFlag,
+  setLocalUserFlag,
+} from '../utils/localUser';
 
 interface LocalUserContextType {
   isLocalUser: boolean;
@@ -12,29 +14,33 @@ interface LocalUserContextType {
 const LocalUserContext = createContext<LocalUserContextType | undefined>(undefined);
 
 export const LocalUserProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [isLocalUser, setIsLocalUserState] = useState(false);
+  const [localMode, setLocalMode] = useState(false);
 
   // Load local user preference on mount
   useEffect(() => {
-    AsyncStorage.getItem(LOCAL_USER_KEY).then((value) => {
-      if (value === 'true') {
-        setIsLocalUserState(true);
+    readLocalUserFlag().then((value) => {
+      if (value) {
+        setLocalMode(true);
       }
     });
   }, []);
 
   const setLocalUser = useCallback((value: boolean) => {
-    setIsLocalUserState(value);
-    AsyncStorage.setItem(LOCAL_USER_KEY, value ? 'true' : 'false');
+    setLocalMode(value);
+    if (value) {
+      void setLocalUserFlag();
+      return;
+    }
+    void clearLocalUserFlag();
   }, []);
 
   const clearLocalUser = useCallback(async () => {
-    setIsLocalUserState(false);
-    await AsyncStorage.removeItem(LOCAL_USER_KEY);
+    setLocalMode(false);
+    await clearLocalUserFlag();
   }, []);
 
   return (
-    <LocalUserContext.Provider value={{ isLocalUser, setLocalUser, clearLocalUser }}>
+    <LocalUserContext.Provider value={{ isLocalUser: localMode, setLocalUser, clearLocalUser }}>
       {children}
     </LocalUserContext.Provider>
   );
@@ -53,6 +59,5 @@ export const useLocalUser = (): LocalUserContextType => {
  * Can be used outside of React components
  */
 export const checkIsLocalUser = async (): Promise<boolean> => {
-  const value = await AsyncStorage.getItem(LOCAL_USER_KEY);
-  return value === 'true';
+  return readLocalUserFlag();
 };

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Coordinates, getCurrentLocation, getLastKnownLocation } from '../services/locationService';
+import { Coordinates, getCurrentLocation, getLastKnownLocation } from '../services';
 
 interface UseLocationResult {
   location: Coordinates | null;

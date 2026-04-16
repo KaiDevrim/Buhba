@@ -1,18 +1,16 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
-import { createStackNavigator } from '@react-navigation/stack';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { DatabaseProvider } from '@nozbe/watermelondb/react';
-import { signInWithRedirect, getCurrentUser } from 'aws-amplify/auth';
-import { Hub } from 'aws-amplify/utils';
+import * as WatermelonDatabaseProvider from '@nozbe/watermelondb/DatabaseProvider';
+import { signInWithRedirect } from 'aws-amplify/auth';
 import { View, Text, TouchableOpacity, StyleSheet, Image, ActivityIndicator } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
-import { configureAmplify } from './src/config/amplify';
-import { RootStackParamList, TabParamList } from './src/types/navigation';
-import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS, SHADOWS } from './src/constants/theme';
-import { LocalUserProvider } from './src/context/LocalUserContext';
+import { configureAmplify } from '@/config';
+import { RootStackParamList, TabParamList } from '@/types';
+import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS, SHADOWS } from '@/constants';
+import { LocalUserProvider } from '@/context';
 import database from './database/index.native';
 import { BottomBar } from './components';
 import Gallery from './pages/Gallery';
@@ -21,39 +19,27 @@ import Stats from './pages/Stats';
 import DrinkDetail from './pages/DrinkDetail';
 import EditDrink from './pages/EditDrink';
 import Profile from './pages/Profile';
-import { syncFromCloud } from './services/syncService';
-// TODO: Add app icon to the sign in page at the top
-// TODO: Go through whole app and remove console.logs and add proper error handling and remove in-dev stuff
-// Log app startup
-console.log('[App] Starting BobaPal...');
+import { syncFromCloud } from './services';
+import { useAuthStatus } from './hooks';
 
-// Initialize Amplify before any components render
 try {
   configureAmplify();
-  console.log('[App] Amplify configured successfully');
 } catch (error) {
-  console.error('[App] Failed to configure Amplify:', error);
-}
-
-// Validate that all page components are loaded
-if (!Gallery || !AddDrink || !Stats || !DrinkDetail || !EditDrink || !Profile) {
-  console.error('Missing page components:', {
-    Gallery,
-    AddDrink,
-    Stats,
-    DrinkDetail,
-    EditDrink,
-    Profile,
-  });
-} else {
-  console.log('[App] All page components loaded successfully');
+  if (__DEV__) {
+    console.error('Failed to configure Amplify:', error);
+  }
 }
 
 // Re-export types for backward compatibility
 export type { RootStackParamList, TabParamList };
 
-const Stack = createStackNavigator<RootStackParamList>();
+const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<TabParamList>();
+const DatabaseProvider = (WatermelonDatabaseProvider as unknown as { DatabaseProvider: unknown })
+  .DatabaseProvider as React.ComponentType<{
+  database: unknown;
+  children?: React.ReactNode;
+}>;
 
 const MainTabs: React.FC = () => (
   <Tab.Navigator
@@ -64,60 +50,8 @@ const MainTabs: React.FC = () => (
     <Tab.Screen name="Stats" component={Stats} />
   </Tab.Navigator>
 );
-MainTabs.displayName = 'MainTabs';
-
-// Defensive SafeAreaProvider wrapper
-const DefensiveSafeAreaProvider: React.FC<React.ComponentProps<typeof SafeAreaProvider>> = ({
-  children,
-  ...props
-}) => {
-  // Only pass valid props
-  const safeProps: any = {};
-  if (props.initialMetrics) safeProps.initialMetrics = props.initialMetrics;
-  // Never pass style or padding props
-  return <SafeAreaProvider {...safeProps}>{children}</SafeAreaProvider>;
-};
-
-// Global error boundary
-class GlobalErrorBoundary extends React.Component<
-  { children: React.ReactNode },
-  { error: Error | null }
-> {
-  constructor(props: any) {
-    super(props);
-    this.state = { error: null };
-  }
-  static getDerivedStateFromError(error: Error) {
-    return { error };
-  }
-  componentDidCatch(error: Error, info: any) {
-    console.error('[GlobalErrorBoundary] Caught error:', error, info);
-  }
-  render() {
-    if (this.state.error) {
-      return (
-        <View
-          style={{
-            flex: 1,
-            justifyContent: 'center',
-            alignItems: 'center',
-            backgroundColor: '#fff',
-          }}>
-          <Text style={{ color: 'red', fontSize: 18, marginBottom: 10 }}>
-            A fatal error occurred:
-          </Text>
-          <Text style={{ color: 'red', fontSize: 14 }}>{this.state.error.message}</Text>
-        </View>
-      );
-    }
-    return this.props.children;
-  }
-}
 
 const AuthenticatedApp: React.FC<{ isLocalUser: boolean }> = ({ isLocalUser }) => {
-  // Defensive: catch errors in children
-  const [error, setError] = useState<Error | null>(null);
-
   useEffect(() => {
     if (!isLocalUser) {
       syncFromCloud().catch((error) => {
@@ -128,51 +62,25 @@ const AuthenticatedApp: React.FC<{ isLocalUser: boolean }> = ({ isLocalUser }) =
     }
   }, [isLocalUser]);
 
-  if (error) {
-    return (
-      <View
-        style={{
-          flex: 1,
-          justifyContent: 'center',
-          alignItems: 'center',
-          backgroundColor: '#fff',
-        }}>
-        <Text style={{ color: 'red', fontSize: 18, marginBottom: 10 }}>
-          An error occurred after login:
-        </Text>
-        <Text style={{ color: 'red', fontSize: 14 }}>{error.message}</Text>
-      </View>
-    );
-  }
-
-  try {
-    console.log('[AuthenticatedApp] Rendering with isLocalUser:', isLocalUser);
-    return (
-      <GlobalErrorBoundary>
-        <LocalUserProvider>
-          <DatabaseProvider database={database}>
-            <DefensiveSafeAreaProvider>
-              <NavigationContainer>
-                <Stack.Navigator screenOptions={{ headerShown: false }}>
-                  <Stack.Screen name="MainTabs" component={MainTabs} />
-                  <Stack.Screen name="DrinkDetail" component={DrinkDetail} />
-                  <Stack.Screen name="EditDrink" component={EditDrink} />
-                  <Stack.Screen name="Profile" component={Profile} />
-                </Stack.Navigator>
-              </NavigationContainer>
-            </DefensiveSafeAreaProvider>
-          </DatabaseProvider>
-        </LocalUserProvider>
-      </GlobalErrorBoundary>
-    );
-  } catch (err: any) {
-    setError(err);
-    return null;
-  }
+  return (
+      <LocalUserProvider>
+        <DatabaseProvider database={database}>
+          <SafeAreaProvider>
+            <NavigationContainer>
+              <Stack.Navigator screenOptions={{ headerShown: false }}>
+                <Stack.Screen name="MainTabs" component={MainTabs} />
+                <Stack.Screen name="DrinkDetail" component={DrinkDetail} />
+                <Stack.Screen name="EditDrink" component={EditDrink} />
+                <Stack.Screen name="Profile" component={Profile} />
+              </Stack.Navigator>
+            </NavigationContainer>
+          </SafeAreaProvider>
+        </DatabaseProvider>
+      </LocalUserProvider>
+  );
 };
-AuthenticatedApp.displayName = 'AuthenticatedApp';
 
-const CustomSignIn: React.FC<{ onSkipLogin: () => void }> = ({ onSkipLogin }) => {
+const CustomSignIn: React.FC<{ onSkipLogin: () => void | Promise<void> }> = ({ onSkipLogin }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -180,10 +88,18 @@ const CustomSignIn: React.FC<{ onSkipLogin: () => void }> = ({ onSkipLogin }) =>
     try {
       setIsLoading(true);
       setError(null);
-      console.log('[Auth] Starting Google sign in...');
       await signInWithRedirect({ provider: 'Google' });
     } catch (err) {
-      console.error('[Auth] Google sign in error:', err);
+      const authError = err as { name?: string; message?: string };
+      if (authError.name === 'UserAlreadyAuthenticatedException') {
+        setError('You are already signed in. Please wait a moment...');
+        setIsLoading(false);
+        return;
+      }
+
+      if (__DEV__) {
+        console.error('Google sign in error:', err);
+      }
       setError('Failed to sign in with Google. Please try again.');
       setIsLoading(false);
     }
@@ -221,7 +137,6 @@ const CustomSignIn: React.FC<{ onSkipLogin: () => void }> = ({ onSkipLogin }) =>
     </View>
   );
 };
-CustomSignIn.displayName = 'CustomSignIn';
 
 const authStyles = StyleSheet.create({
   container: {
@@ -292,142 +207,8 @@ const authStyles = StyleSheet.create({
   },
 });
 
-type AuthStatus = 'loading' | 'authenticated' | 'unauthenticated' | 'local';
-
-const LOCAL_USER_KEY = '@bobapal:isLocalUser';
-
-const useAuthStatus = (): {
-  status: AuthStatus;
-  setLocalUser: () => void;
-  clearLocalUser: () => Promise<void>;
-} => {
-  const [status, setStatus] = useState<AuthStatus>('loading');
-
-  const setLocalUser = useCallback(() => {
-    AsyncStorage.setItem(LOCAL_USER_KEY, 'true');
-    setStatus((prev) => {
-      if (prev !== 'local') {
-        console.log('[AuthStatus] Switching to local');
-        return 'local';
-      }
-      return prev;
-    });
-  }, []);
-
-  const clearLocalUser = useCallback(async () => {
-    await AsyncStorage.removeItem(LOCAL_USER_KEY);
-    setStatus((prev) => {
-      if (prev !== 'unauthenticated') {
-        console.log('[AuthStatus] Clearing local user, switching to unauthenticated');
-        return 'unauthenticated';
-      }
-      return prev;
-    });
-  }, []);
-
-  useEffect(() => {
-    let isMounted = true;
-
-    const checkAuth = async () => {
-      try {
-        const isLocalUser = await AsyncStorage.getItem(LOCAL_USER_KEY);
-        if (isLocalUser === 'true') {
-          if (isMounted) {
-            setStatus((prev) => {
-              if (prev !== 'local') {
-                console.log('[AuthStatus] Detected local user');
-                return 'local';
-              }
-              return prev;
-            });
-          }
-          return;
-        }
-
-        console.log('[AuthStatus] Checking current user...');
-        const user = await getCurrentUser();
-        console.log('[AuthStatus] User found:', user?.userId);
-        if (isMounted) {
-          setStatus((prev) => {
-            if (prev !== 'authenticated') {
-              console.log('[AuthStatus] Switching to authenticated');
-              return 'authenticated';
-            }
-            return prev;
-          });
-        }
-      } catch {
-        console.log('[AuthStatus] No user found, showing sign in');
-        if (isMounted) {
-          setStatus((prev) => {
-            if (prev !== 'unauthenticated') {
-              console.log('[AuthStatus] Switching to unauthenticated');
-              return 'unauthenticated';
-            }
-            return prev;
-          });
-        }
-      }
-    };
-
-    const timeoutId = setTimeout(() => {
-      console.log('[AuthStatus] Auth check timed out, defaulting to unauthenticated');
-      if (isMounted) {
-        setStatus((current) => (current === 'loading' ? 'unauthenticated' : current));
-      }
-    }, 5000);
-
-    checkAuth();
-
-    const listener = Hub.listen('auth', ({ payload }) => {
-      const anyPayload = payload as any;
-      const event = anyPayload.event as string;
-      const eventData = anyPayload.data ?? anyPayload.message ?? undefined;
-      console.log('[AuthStatus] Hub event:', event, eventData ? eventData : '');
-      if (event === 'signedIn' || event === 'signInWithRedirect') {
-        setStatus((prev) => {
-          if (prev !== 'authenticated') {
-            console.log('[AuthStatus] Hub: switching to authenticated');
-            return 'authenticated';
-          }
-          return prev;
-        });
-      }
-      if (event === 'signedOut') {
-        setStatus((prev) => {
-          if (prev !== 'unauthenticated') {
-            console.log('[AuthStatus] Hub: switching to unauthenticated');
-            return 'unauthenticated';
-          }
-          return prev;
-        });
-      }
-      if (event === 'signInWithRedirect_failure') {
-        console.error('[AuthStatus] Sign in redirect failed. Error:', eventData ?? payload);
-        setStatus((prev) => {
-          if (prev !== 'unauthenticated') {
-            console.log('[AuthStatus] Hub: switching to unauthenticated (redirect failure)');
-            return 'unauthenticated';
-          }
-          return prev;
-        });
-      }
-    });
-
-    return () => {
-      isMounted = false;
-      clearTimeout(timeoutId);
-      listener();
-    };
-  }, []);
-
-  return { status, setLocalUser, clearLocalUser };
-};
-
 const App: React.FC = () => {
   const { status: authStatus, setLocalUser } = useAuthStatus();
-
-  console.log('[App] Current auth status:', authStatus);
 
   if (authStatus === 'loading') {
     return (
@@ -439,18 +220,14 @@ const App: React.FC = () => {
   }
 
   if (authStatus === 'authenticated') {
-    console.log('[App] Rendering AuthenticatedApp (cloud user)');
     return <AuthenticatedApp isLocalUser={false} />;
   }
 
   if (authStatus === 'local') {
-    console.log('[App] Rendering AuthenticatedApp (local user)');
     return <AuthenticatedApp isLocalUser={true} />;
   }
 
-  console.log('[App] Rendering CustomSignIn');
   return <CustomSignIn onSkipLogin={setLocalUser} />;
 };
-App.displayName = 'App';
 
 export default App;
