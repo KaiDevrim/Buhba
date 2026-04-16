@@ -29,6 +29,7 @@ android/
 .metro-health-check*
 
 .env.local
+learning-notes.local.md
 
 #amplify-do-not-edit-begin
 amplify/\#current-cloud-backend
@@ -39,8 +40,6 @@ amplify/mock-api-resources
 amplify/backend/amplify-meta.json
 amplify/backend/.temp
 build/
-dist/
-node_modules/
 aws-exports.js
 awsconfiguration.json
 # Note: amplifyconfiguration.json in src/ folder is needed for builds - do not ignore
