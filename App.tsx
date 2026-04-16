@@ -35,8 +35,13 @@ export type { RootStackParamList, TabParamList };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<TabParamList>();
-const DatabaseProvider = (WatermelonDatabaseProvider as unknown as { DatabaseProvider: unknown })
-  .DatabaseProvider as React.ComponentType<{
+const databaseProviderModule = WatermelonDatabaseProvider as unknown as {
+  DatabaseProvider?: unknown;
+  default?: unknown;
+};
+const DatabaseProvider = (databaseProviderModule.DatabaseProvider ||
+  databaseProviderModule.default ||
+  databaseProviderModule) as React.ComponentType<{
   database: unknown;
   children?: React.ReactNode;
 }>;

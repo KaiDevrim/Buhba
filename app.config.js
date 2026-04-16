@@ -44,7 +44,6 @@ export default {
       },
       config: {
         usesNonExemptEncryption: false,
-        googleMapsApiKey: googlePlacesApiKey,
       },
     },
     android: {
