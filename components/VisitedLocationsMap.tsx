@@ -1,4 +1,4 @@
-import React, { useMemo, memo, useRef, useCallback, useState } from 'react';
+import React, { useMemo, memo, useRef, useCallback, useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -14,8 +14,8 @@ import {
 import MapView, { Marker, PROVIDER_GOOGLE, Region } from 'react-native-maps';
 import * as Location from 'expo-location';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS, SHADOWS } from '../src/constants/theme';
-import { searchNearbyBobaShops, NearbyBobaShop } from '../services/placesService';
+import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS, SHADOWS } from '@/constants';
+import { searchNearbyBobaShops, NearbyBobaShop } from '../services';
 
 export interface VisitedLocation {
   id: string;
@@ -28,6 +28,7 @@ export interface VisitedLocation {
 interface VisitedLocationsMapProps {
   locations: VisitedLocation[];
   height?: number;
+  fullScreen?: boolean;
 }
 
 const DEFAULT_REGION: Region = {
@@ -40,7 +41,7 @@ const DEFAULT_REGION: Region = {
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 const VisitedLocationsMap: React.FC<VisitedLocationsMapProps> = memo(
-  ({ locations, height = 250 }) => {
+  ({ locations, height = 250, fullScreen = false }) => {
     const mapRef = useRef<MapView>(null);
     const fullScreenMapRef = useRef<MapView>(null);
     const [isFullScreen, setIsFullScreen] = useState(false);
@@ -49,7 +50,71 @@ const VisitedLocationsMap: React.FC<VisitedLocationsMapProps> = memo(
     const [nearbyShops, setNearbyShops] = useState<NearbyBobaShop[]>([]);
     const [showNearbyShops, setShowNearbyShops] = useState(false);
     const [currentMapRegion, setCurrentMapRegion] = useState<Region | null>(null);
+    const [selectedLocation, setSelectedLocation] = useState<VisitedLocation | null>(null);
+    const [userRegion, setUserRegion] = useState<Region | null>(null);
     const insets = useSafeAreaInsets();
+
+    useEffect(() => {
+      if (locations.length === 0) {
+        setSelectedLocation(null);
+        return;
+      }
+
+      setSelectedLocation((current) => {
+        if (current) {
+          const stillExists = locations.find((location) => location.id === current.id);
+          if (stillExists) {
+            return stillExists;
+          }
+        }
+
+        return locations[0];
+      });
+    }, [locations]);
+
+    const getCurrentLocationRegion = useCallback(async () => {
+      try {
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== 'granted') {
+          return null;
+        }
+
+        const location = await Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.Balanced,
+        });
+
+        return {
+          latitude: location.coords.latitude,
+          longitude: location.coords.longitude,
+          latitudeDelta: 0.01,
+          longitudeDelta: 0.01,
+        } satisfies Region;
+      } catch (error) {
+        if (__DEV__) {
+          console.error('Failed to get current location:', error);
+        }
+        return null;
+      }
+    }, []);
+
+    useEffect(() => {
+      if (!fullScreen) {
+        return;
+      }
+
+      let isMounted = true;
+
+      getCurrentLocationRegion().then((region) => {
+        if (isMounted && region) {
+          setUserRegion(region);
+          fullScreenMapRef.current?.animateToRegion(region, 500);
+        }
+      });
+
+      return () => {
+        isMounted = false;
+      };
+    }, [fullScreen, getCurrentLocationRegion]);
 
     // Calculate the region to fit all markers
     const mapRegion = useMemo(() => {
@@ -101,8 +166,9 @@ const VisitedLocationsMap: React.FC<VisitedLocationsMapProps> = memo(
     const handleGoToCurrentLocation = useCallback(async () => {
       setIsLocating(true);
       try {
-        const { status } = await Location.requestForegroundPermissionsAsync();
-        if (status !== 'granted') {
+        const currentRegion = await getCurrentLocationRegion();
+
+        if (!currentRegion) {
           Alert.alert(
             'Permission Denied',
             'Please enable location permissions to use this feature.'
@@ -110,16 +176,7 @@ const VisitedLocationsMap: React.FC<VisitedLocationsMapProps> = memo(
           return;
         }
 
-        const location = await Location.getCurrentPositionAsync({
-          accuracy: Location.Accuracy.Balanced,
-        });
-
-        const currentRegion: Region = {
-          latitude: location.coords.latitude,
-          longitude: location.coords.longitude,
-          latitudeDelta: 0.01,
-          longitudeDelta: 0.01,
-        };
+        setUserRegion(currentRegion);
 
         fullScreenMapRef.current?.animateToRegion(currentRegion, 500);
       } catch (error) {
@@ -130,7 +187,7 @@ const VisitedLocationsMap: React.FC<VisitedLocationsMapProps> = memo(
       } finally {
         setIsLocating(false);
       }
-    }, []);
+    }, [getCurrentLocationRegion]);
 
     const handleFitAllMarkers = useCallback(() => {
       fullScreenMapRef.current?.animateToRegion(mapRegion, 500);
@@ -231,33 +288,21 @@ const VisitedLocationsMap: React.FC<VisitedLocationsMapProps> = memo(
       setCurrentMapRegion(region);
     }, []);
 
-    if (locations.length === 0) {
-      return (
-        <View style={[styles.container, { height }]}>
-          <View style={styles.emptyContainer}>
-            <Text style={styles.emptyEmoji}>🗺️</Text>
-            <Text style={styles.emptyText}>No locations yet</Text>
-            <Text style={styles.emptySubtext}>
-              Add drinks with location data to see them on the map
-            </Text>
-          </View>
-        </View>
-      );
-    }
+    const initialMapRegion = userRegion || mapRegion;
 
     const renderMap = (isFullScreenMap: boolean) => (
       <MapView
         ref={isFullScreenMap ? fullScreenMapRef : mapRef}
         style={isFullScreenMap ? styles.fullScreenMap : styles.map}
         provider={Platform.OS === 'android' ? PROVIDER_GOOGLE : undefined}
-        initialRegion={mapRegion}
+        initialRegion={initialMapRegion}
         showsUserLocation
         showsMyLocationButton={false}
         showsCompass={isFullScreenMap}
         pitchEnabled={isFullScreenMap}
         rotateEnabled={isFullScreenMap}
         zoomEnabled
-        scrollEnabled={isFullScreenMap}
+        scrollEnabled={isFullScreenMap || fullScreen}
         onRegionChangeComplete={isFullScreenMap ? handleRegionChange : undefined}>
         {/* Visited locations markers */}
         {locations.map((location) => (
@@ -270,6 +315,7 @@ const VisitedLocationsMap: React.FC<VisitedLocationsMapProps> = memo(
             title={location.storeName}
             description={`${location.visitCount} visit${location.visitCount > 1 ? 's' : ''}`}
             pinColor={getMarkerColor(location.visitCount)}
+            onPress={() => setSelectedLocation(location)}
           />
         ))}
         {/* Nearby boba shops markers */}
@@ -315,6 +361,65 @@ const VisitedLocationsMap: React.FC<VisitedLocationsMapProps> = memo(
         )}
       </View>
     );
+
+    if (fullScreen) {
+      return (
+        <View style={styles.fullPageContainer}>
+          {renderMap(true)}
+
+          <View style={[styles.searchBarWrapper, { top: insets.top + SPACING.sm }]}>
+            <View style={styles.searchBar}>
+              <Text style={styles.searchIcon}>⌕</Text>
+              <Text style={styles.searchPlaceholder}>Search for stores</Text>
+            </View>
+          </View>
+
+          <View style={[styles.fullScreenQuickControls, { right: SPACING.md }]}>
+            <TouchableOpacity
+              style={[styles.quickControlButton, isLocating && styles.controlButtonDisabled]}
+              onPress={handleGoToCurrentLocation}
+              disabled={isLocating}>
+              {isLocating ? (
+                <ActivityIndicator size="small" color={COLORS.primary} />
+              ) : (
+                <Text style={styles.quickControlText}>◎</Text>
+              )}
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.quickControlButton} onPress={handleZoomIn}>
+              <Text style={styles.quickControlText}>+</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.quickControlButton} onPress={handleZoomOut}>
+              <Text style={styles.quickControlText}>−</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.quickControlButton, styles.findNearbyQuickButton]}
+              onPress={showNearbyShops ? handleHideNearbyShops : handleSearchNearby}
+              disabled={isSearching}>
+              {isSearching ? (
+                <ActivityIndicator size="small" color={COLORS.background} />
+              ) : (
+                <Text style={styles.findNearbyQuickText}>{showNearbyShops ? '✕' : '🧋'}</Text>
+              )}
+            </TouchableOpacity>
+          </View>
+
+          {(selectedLocation || userRegion) && (
+            <View style={[styles.selectedLocationCard, { bottom: insets.bottom + 88 }]}>
+              <Text style={styles.selectedStoreName}>
+                {selectedLocation ? selectedLocation.storeName : 'Your Location'}
+              </Text>
+              <Text style={styles.selectedStoreMeta}>
+                {selectedLocation
+                  ? `${selectedLocation.visitCount} visit${selectedLocation.visitCount > 1 ? 's' : ''}`
+                  : showNearbyShops
+                    ? `${nearbyShops.length} nearby boba shop${nearbyShops.length > 1 ? 's' : ''}`
+                    : 'Tap the boba button to find nearby shops'}
+              </Text>
+            </View>
+          )}
+        </View>
+      );
+    }
 
     return (
       <>
@@ -500,6 +605,10 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.background,
   },
+  fullPageContainer: {
+    flex: 1,
+    backgroundColor: COLORS.background,
+  },
   fullScreenHeader: {
     position: 'absolute',
     top: 50,
@@ -543,6 +652,75 @@ const styles = StyleSheet.create({
   fullScreenMap: {
     width: SCREEN_WIDTH,
     height: SCREEN_HEIGHT,
+  },
+  searchBarWrapper: {
+    position: 'absolute',
+    left: SPACING.md,
+    right: SPACING.md,
+  },
+  searchBar: {
+    height: 48,
+    borderRadius: BORDER_RADIUS.lg,
+    backgroundColor: COLORS.background,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: SPACING.md,
+    ...SHADOWS.md,
+  },
+  searchIcon: {
+    fontSize: FONT_SIZES.lg,
+    color: COLORS.text.secondary,
+    marginRight: SPACING.sm,
+  },
+  searchPlaceholder: {
+    fontSize: FONT_SIZES.md,
+    color: COLORS.text.secondary,
+  },
+  fullScreenQuickControls: {
+    position: 'absolute',
+    top: 130,
+    gap: SPACING.xs,
+  },
+  quickControlButton: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: COLORS.background,
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...SHADOWS.sm,
+  },
+  quickControlText: {
+    fontSize: FONT_SIZES.xl,
+    fontWeight: '700',
+    color: COLORS.text.primary,
+  },
+  findNearbyQuickButton: {
+    backgroundColor: COLORS.primary,
+  },
+  findNearbyQuickText: {
+    fontSize: FONT_SIZES.lg,
+    fontWeight: '700',
+    color: COLORS.background,
+  },
+  selectedLocationCard: {
+    position: 'absolute',
+    left: SPACING.md,
+    right: SPACING.md,
+    backgroundColor: COLORS.background,
+    borderRadius: BORDER_RADIUS.md,
+    padding: SPACING.md,
+    ...SHADOWS.md,
+  },
+  selectedStoreName: {
+    fontSize: FONT_SIZES.lg,
+    fontWeight: '700',
+    color: COLORS.text.primary,
+    marginBottom: SPACING.xs,
+  },
+  selectedStoreMeta: {
+    fontSize: FONT_SIZES.sm,
+    color: COLORS.text.secondary,
   },
   mapControls: {
     position: 'absolute',

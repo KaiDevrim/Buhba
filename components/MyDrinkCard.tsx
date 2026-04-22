@@ -2,8 +2,8 @@ import React, { memo } from 'react';
 import { View, Text, StyleSheet, Dimensions } from 'react-native';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useS3Image } from '../hooks/useS3Image';
-import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS, SHADOWS } from '../src/constants/theme';
+import { useS3Image } from '../hooks';
+import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS, SHADOWS } from '@/constants';
 
 interface MyDrinkCardProps {
   title: string;
@@ -35,7 +35,9 @@ const MyDrinkCard: React.FC<MyDrinkCardProps> = memo(({ title, date, s3Key, phot
   return (
     <View style={styles.card}>
       <Image
-        source={imageUrl ? { uri: imageUrl } : require('../assets/boba.jpg')}
+        source={
+          imageUrl ? { uri: imageUrl, cacheKey: s3Key ?? undefined } : require('../assets/boba.jpg')
+        }
         style={styles.image}
         placeholder={{ blurhash: PLACEHOLDER_BLURHASH }}
         contentFit="cover"

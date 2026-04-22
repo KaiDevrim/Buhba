@@ -249,7 +249,7 @@ const EditDrink: React.FC = () => {
   const displayImageSource = newImageUri
     ? { uri: newImageUri }
     : imageUrl
-      ? { uri: imageUrl }
+      ? { uri: imageUrl, cacheKey: drink.s3Key ?? undefined }
       : require('../assets/boba.jpg');
 
   return (
@@ -258,6 +258,9 @@ const EditDrink: React.FC = () => {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled">
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+          <Text style={styles.backButtonText}>←</Text>
+        </TouchableOpacity>
         <Text style={styles.title}>Edit Drink</Text>
 
         <View style={styles.imageContainer}>
@@ -354,6 +357,26 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.xl,
     paddingTop: 80,
     paddingBottom: 100,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: SPACING.xl,
+  },
+  backButton: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'flex-start',
+    paddingLeft: SPACING.sm,
+    paddingTop: SPACING.sm,
+    paddingBottom: SPACING.sm,
+    alignSelf: 'flex-start',
+  },
+  backButtonText: {
+    fontSize: FONT_SIZES.md,
+    color: COLORS.primary,
+    fontWeight: '600',
   },
   title: {
     fontSize: FONT_SIZES.xxl,

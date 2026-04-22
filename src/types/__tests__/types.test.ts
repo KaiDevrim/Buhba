@@ -5,21 +5,23 @@ import type {
   DrinkForm,
   DrinkData,
   StatsData,
-} from '../index';
+} from '@/types';
 
 describe('Type exports', () => {
   describe('Navigation types', () => {
     it('RootStackParamList has correct shape', () => {
       const routes: RootStackParamList = {
         MainTabs: undefined,
-        DrinkDetail: { drinkId: 'test-id' },
-        EditDrink: { drinkId: 'test-id' },
+        DrinkDetail: { drinkId: '123' },
+        EditDrink: { drinkId: '123' },
         Profile: undefined,
+        Login: undefined,
+        Explore: undefined
       };
-
+      expect(routes).toBeDefined();
       expect(routes.MainTabs).toBeUndefined();
-      expect(routes.DrinkDetail.drinkId).toBe('test-id');
-      expect(routes.EditDrink.drinkId).toBe('test-id');
+      expect(routes.DrinkDetail.drinkId).toBe('123');
+      expect(routes.EditDrink.drinkId).toBe('123');
       expect(routes.Profile).toBeUndefined();
     });
 

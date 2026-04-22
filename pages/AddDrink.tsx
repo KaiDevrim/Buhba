@@ -7,7 +7,7 @@ import { uploadImage, syncToCloud, getPlaceDetails, PlacePrediction } from '../s
 import { useCurrentUser } from '../hooks';
 import { FormField, Button, StoreAutocomplete, GradientBackground } from '../components';
 import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS, RATINGS, DEFAULT_IMAGES } from '@/constants';
-import type { DrinkForm } from '@/types';
+import { DrinkForm } from '@/types';
 
 const INITIAL_FORM: DrinkForm = {
   flavor: '',
@@ -221,6 +221,28 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.xl,
     paddingTop: 80,
     paddingBottom: 100,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: SPACING.xl,
+  },
+  backButton: {
+    padding: SPACING.sm,
+  },
+  backButtonText: {
+    fontSize: FONT_SIZES.md,
+    color: COLORS.primary,
+    fontWeight: '600',
+  },
+  title: {
+    fontSize: FONT_SIZES.xxl,
+    fontWeight: 'bold',
+    color: COLORS.text.accent,
+  },
+  placeholder: {
+    width: 60,
   },
   imagePlaceholder: {
     width: 100,

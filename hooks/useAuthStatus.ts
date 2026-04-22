@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { DeviceEventEmitter } from 'react-native';
 import { getCurrentUser } from 'aws-amplify/auth';
 import { Hub } from 'aws-amplify/utils';
 
@@ -9,6 +10,7 @@ export type AuthStatus = 'loading' | 'authenticated' | 'unauthenticated' | 'loca
 interface UseAuthStatusResult {
   status: AuthStatus;
   setLocalUser: () => Promise<void>;
+  clearLocalUser: () => Promise<void>;
 }
 
 const AUTH_TIMEOUT_MS = 5000;
@@ -19,6 +21,10 @@ export const useAuthStatus = (): UseAuthStatusResult => {
   const setLocalUser = async () => {
     await setLocalUserFlag();
     setStatus('local');
+  };
+
+  const clearLocalUser = async () => {
+    setStatus('unauthenticated');
   };
 
   useEffect(() => {
@@ -58,6 +64,14 @@ export const useAuthStatus = (): UseAuthStatusResult => {
 
     void checkAuth();
 
+    const localUserListener = DeviceEventEmitter.addListener('local-user-changed', (isLocal) => {
+      if (isLocal) {
+        setStatusIfMounted('local');
+      } else {
+        setStatusIfMounted('unauthenticated');
+      }
+    });
+
     const unsubscribe = Hub.listen('auth', ({ payload }) => {
       const event = (payload as { event?: string }).event;
 
@@ -77,8 +91,9 @@ export const useAuthStatus = (): UseAuthStatusResult => {
       isMounted = false;
       clearTimeout(timeoutId);
       unsubscribe();
+      localUserListener.remove();
     };
   }, []);
 
-  return { status, setLocalUser };
+  return { status, setLocalUser, clearLocalUser };
 };

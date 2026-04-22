@@ -18,6 +18,7 @@ import { RootStackParamList } from '@/types';
 import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS, SHADOWS } from '@/constants';
 import { clearLocalUserFlag } from '@/utils/localUser';
 import { clearLocalDrinks, fetchProfileUserInfo, ProfileUserInfo } from './profile/profileHelpers';
+import { fastSignOut } from '@/utils/auth';
 
 const PRIVACY_POLICY_URL = 'https://github.com/KaiDevrim/BobaPal/blob/main/PRIVACY_POLICY.md';
 const CONTACT_EMAIL = 'support@devrim.tech';
@@ -60,17 +61,19 @@ const Profile: React.FC = () => {
         onPress: async () => {
           setIsSigningOut(true);
           try {
-            if (isLocal) {
-              await clearLocalUserFlag();
-            } else {
-              await signOut();
+            if (!isLocal) {
+              // Wipe local AWS storage first so the official signOut() doesn't
+              // try to open a slow browser loop to kill the OAuth session.
+              await fastSignOut();
+              await signOut().catch(() => {});
             }
+            // Instantly transition the UI using our event emitter
+            await clearLocalUserFlag();
           } catch (error) {
             if (__DEV__) {
               console.error('Sign out error:', error);
             }
             Alert.alert('Error', 'Failed to sign out. Please try again.');
-          } finally {
             setIsSigningOut(false);
           }
         },
@@ -105,18 +108,18 @@ const Profile: React.FC = () => {
                   try {
                     if (isLocal) {
                       await clearLocalDrinks();
-                      await clearLocalUserFlag();
                       Alert.alert('Data Deleted', 'Your local data has been deleted.');
                     } else {
                       await deleteUser();
                       Alert.alert('Account Deleted', 'Your account has been deleted successfully.');
                     }
+                    // Instantly kick the user out visually after deletion
+                    await clearLocalUserFlag();
                   } catch (error) {
                     if (__DEV__) {
                       console.error('Delete account error:', error);
                     }
                     Alert.alert('Error', 'Failed to delete. Please try again.');
-                  } finally {
                     setIsDeleting(false);
                   }
                 },

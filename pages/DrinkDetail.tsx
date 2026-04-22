@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, Text, View, ScrollView } from 'react-native';
+import { StyleSheet, Text, View, ScrollView, TouchableOpacity } from 'react-native';
 import { Image } from 'expo-image';
 import { RouteProp, useRoute, useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
@@ -57,12 +57,23 @@ const DrinkDetail: React.FC = () => {
     );
   }
 
+  const handleBack = () => {
+    navigation.goBack();
+  };
+
   return (
     <GradientBackground>
       <ScrollView contentContainerStyle={styles.scrollContent}>
+        <TouchableOpacity onPress={handleBack} style={styles.backButton}>
+          <Text style={styles.backButtonText}>← Back</Text>
+        </TouchableOpacity>
         <View style={styles.imageContainer}>
           <Image
-            source={imageUrl ? { uri: imageUrl } : require('../assets/boba2.jpg')}
+            source={
+              imageUrl
+                ? { uri: imageUrl, cacheKey: drink.s3Key ?? undefined }
+                : require('../assets/boba2.jpg')
+            }
             style={styles.image}
             placeholder={{ blurhash: PLACEHOLDER_BLURHASH }}
             contentFit="cover"
@@ -97,6 +108,26 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.xl,
     paddingTop: 80,
     paddingBottom: 100,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: SPACING.xl,
+  },
+  backButton: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'flex-start',
+    paddingLeft: SPACING.sm,
+    paddingTop: SPACING.sm,
+    paddingBottom: SPACING.sm,
+    alignSelf: 'flex-start',
+  },
+  backButtonText: {
+    fontSize: FONT_SIZES.md,
+    color: COLORS.primary,
+    fontWeight: '600',
   },
   loadingContainer: {
     flex: 1,

@@ -1,15 +1,7 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
 import { StyleSheet, Text, View, ScrollView } from 'react-native';
-import { useFocusEffect } from '@react-navigation/native';
-import database from '../database/index.native';
-import Drink from '../database/model/Drink';
-import {
-  StatsCard,
-  EmptyState,
-  VisitedLocationsMap,
-  VisitedLocation,
-  GradientBackground,
-} from '../components';
+import { StatsCard, EmptyState, GradientBackground } from '../components';
+import { useFocusedDrinks } from '../hooks';
 import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS } from '@/constants';
 import type { StatsData } from '@/types';
 
@@ -17,24 +9,7 @@ const formatCurrency = (value: number) =>
   new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value);
 
 const Stats: React.FC = () => {
-  const [drinks, setDrinks] = useState<Drink[]>([]);
-
-  const fetchDrinks = useCallback(async () => {
-    try {
-      const allDrinks = await database.collections.get<Drink>('drinks').query().fetch();
-      setDrinks(allDrinks);
-    } catch (error) {
-      if (__DEV__) {
-        console.error('Failed to fetch drinks:', error);
-      }
-    }
-  }, []);
-
-  useFocusEffect(
-    useCallback(() => {
-      fetchDrinks();
-    }, [fetchDrinks])
-  );
+  const { drinks } = useFocusedDrinks();
 
   const stats: StatsData = useMemo(() => {
     const storeVisits = new Map<string, number>();
@@ -53,37 +28,6 @@ const Stats: React.FC = () => {
       totalSpent,
       topStores,
     };
-  }, [drinks]);
-
-  // Calculate visited locations for the map
-  const visitedLocations: VisitedLocation[] = useMemo(() => {
-    const locationMap = new Map<
-      string,
-      { storeName: string; latitude: number; longitude: number; visitCount: number }
-    >();
-
-    drinks.forEach((drink) => {
-      if (drink.latitude != null && drink.longitude != null) {
-        const key = drink.placeId || `${drink.latitude},${drink.longitude}`;
-        const existing = locationMap.get(key);
-
-        if (existing) {
-          existing.visitCount += 1;
-        } else {
-          locationMap.set(key, {
-            storeName: drink.store,
-            latitude: drink.latitude,
-            longitude: drink.longitude,
-            visitCount: 1,
-          });
-        }
-      }
-    });
-
-    return Array.from(locationMap.entries()).map(([id, data]) => ({
-      id,
-      ...data,
-    }));
   }, [drinks]);
 
   if (stats.drinkCount === 0) {
@@ -117,10 +61,6 @@ const Stats: React.FC = () => {
             ))}
           </View>
         )}
-
-        <View style={styles.mapContainer}>
-          <VisitedLocationsMap locations={visitedLocations} height={280} />
-        </View>
       </ScrollView>
     </GradientBackground>
   );
@@ -162,9 +102,6 @@ const styles = StyleSheet.create({
     fontSize: FONT_SIZES.md,
     color: COLORS.text.accent,
     marginBottom: SPACING.xs,
-  },
-  mapContainer: {
-    marginTop: SPACING.xl,
   },
 });
 

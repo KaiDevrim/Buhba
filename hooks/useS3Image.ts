@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { Image } from 'expo-image';
 import { getCachedImageUrl } from '../services';
 
 interface UseS3ImageResult {
@@ -50,6 +51,21 @@ export const useS3Image = (s3Key: string | null, localUri?: string | null): UseS
       }
 
       setLoading(true);
+
+      // Check if expo-image has already saved this file using the s3Key as the cacheKey
+      try {
+        const localPath = await Image.getCachePathAsync(s3Key);
+        if (localPath) {
+          if (mounted) {
+            setImageUrl(localPath.startsWith('file://') ? localPath : `file://${localPath}`);
+            setLoading(false);
+          }
+          return;
+        }
+      } catch (err) {
+        console.log(err);
+      }
+
       const url = await getCachedImageUrl(s3Key);
 
       if (mounted) {

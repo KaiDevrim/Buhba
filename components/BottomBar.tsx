@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import AntDesign from '@expo/vector-icons/AntDesign';
 import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
-import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS } from '../src/constants/theme';
+import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS } from '@/constants';
 
 type TabConfig = {
   name: string;
@@ -14,6 +14,7 @@ const TABS: TabConfig[] = [
   { name: 'Gallery', icon: 'home', label: 'Home' },
   { name: 'AddDrink', icon: 'plus-circle', label: 'Add Boba' },
   { name: 'Stats', icon: 'line-chart', label: 'Stats' },
+  { name: 'Explore', icon: 'compass', label: 'Explore' },
 ];
 
 const BottomBar: React.FC<BottomTabBarProps> = ({ state, navigation }) => {
