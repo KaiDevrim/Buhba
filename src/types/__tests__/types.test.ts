@@ -16,7 +16,7 @@ describe('Type exports', () => {
         EditDrink: { drinkId: '123' },
         Profile: undefined,
         Login: undefined,
-        Explore: undefined
+        Explore: undefined,
       };
       expect(routes).toBeDefined();
       expect(routes.MainTabs).toBeUndefined();
@@ -30,6 +30,7 @@ describe('Type exports', () => {
         Gallery: undefined,
         AddDrink: undefined,
         Stats: undefined,
+        Explore: undefined,
       };
 
       expect(tabs.Gallery).toBeUndefined();
