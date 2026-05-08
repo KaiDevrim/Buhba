@@ -259,7 +259,7 @@ const EditDrink: React.FC = () => {
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled">
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Text style={styles.backButtonText}>←</Text>
+          <Text style={styles.backButtonText}>← Back</Text>
         </TouchableOpacity>
         <Text style={styles.title}>Edit Drink</Text>
 

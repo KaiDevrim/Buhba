@@ -10,6 +10,7 @@ describe('Components index exports', () => {
     'GradientBackground',
     'LoadingState',
     'MyDrinkCard',
+    'StatsBarChart',
     'StatsCard',
     'StoreAutocomplete',
     'VisitedLocationsMap',
@@ -25,7 +26,7 @@ describe('Components index exports', () => {
   });
 
   it('has correct number of exports', () => {
-    expect(expectedExports.length).toBe(12);
+    expect(expectedExports.length).toBe(13);
   });
 
   it('includes BottomBar', () => {
@@ -62,6 +63,10 @@ describe('Components index exports', () => {
 
   it('includes StatsCard', () => {
     expect(expectedExports).toContain('StatsCard');
+  });
+
+  it('includes StatsBarChart', () => {
+    expect(expectedExports).toContain('StatsBarChart');
   });
 
   it('includes StoreAutocomplete', () => {

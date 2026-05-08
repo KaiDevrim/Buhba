@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { StyleSheet, Text, View, ScrollView } from 'react-native';
-import { StatsCard, EmptyState, GradientBackground } from '../components';
+import { StatsCard, EmptyState, GradientBackground, StatsBarChart } from '../components';
 import { useFocusedDrinks } from '../hooks';
 import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS } from '@/constants';
 import type { StatsData } from '@/types';
@@ -50,6 +50,8 @@ const Stats: React.FC = () => {
           <StatsCard icon="💰" number={formatCurrency(stats.totalSpent)} label="SPENT" />
           <StatsCard icon="📊" number={`$${averagePrice.toFixed(2)}`} label="AVG PRICE" />
         </View>
+
+        <StatsBarChart drinks={drinks} />
 
         {stats.topStores.length > 0 && (
           <View style={styles.topStoresContainer}>

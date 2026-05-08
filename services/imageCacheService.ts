@@ -37,10 +37,15 @@ export const getCachedImageUrl = async (s3Key: string | null): Promise<string | 
     const url = await getImageUrl(s3Key);
     urlCache.set(s3Key, { url, expiry: now + CACHE_DURATION_MS });
     return url;
-  } catch (error) {
+  } catch (error: any) {
+    const errorMsg = error?.message || String(error);
+    const errorName = error?.name || 'UnknownError';
+
     if (__DEV__) {
-      console.error('Failed to get image URL:', error);
+      console.warn(`Failed to get image URL for s3Key "${s3Key}": ${errorName} - ${errorMsg}`);
     }
+
+    // Return null so images gracefully fail to load instead of crashing
     return null;
   }
 };

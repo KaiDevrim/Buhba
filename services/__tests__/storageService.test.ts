@@ -37,7 +37,9 @@ describe('storageService', () => {
         identityId: null,
       });
 
-      await expect(getIdentityId()).rejects.toThrow('No identity ID found in session');
+      await expect(getIdentityId()).rejects.toThrow(
+        'No identity ID found - authentication may have failed'
+      );
     });
   });
 

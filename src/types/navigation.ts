@@ -5,10 +5,11 @@ export type RootStackParamList = {
   Profile: undefined;
   Login: undefined;
   Explore: undefined;
+  Gallery: undefined;
 };
 
 export type TabParamList = {
-  Gallery: undefined;
+  Home: undefined;
   AddDrink: undefined;
   Stats: undefined;
   Explore: undefined;

@@ -16,11 +16,29 @@ export const getIdentityId = async (): Promise<string> => {
     return LOCAL_USER_ID;
   }
 
-  const session = await fetchAuthSession();
-  if (!session.identityId) {
-    throw new Error('No identity ID found in session');
+  try {
+    const session = await fetchAuthSession();
+    if (session.identityId) {
+      return session.identityId;
+    }
+  } catch (error: any) {
+    // If we get an auth error, try refreshing
+    if (
+      error?.name === 'NotAuthorizedException' ||
+      error?.message?.includes('Invalid login token')
+    ) {
+      try {
+        const refreshedSession = await fetchAuthSession({ forceRefresh: true });
+        if (refreshedSession.identityId) {
+          return refreshedSession.identityId;
+        }
+      } catch (refreshError) {
+        console.warn('Failed to get identity ID after refresh:', refreshError);
+      }
+    }
   }
-  return session.identityId;
+
+  throw new Error('No identity ID found - authentication may have failed');
 };
 
 /**
@@ -71,14 +89,48 @@ export const getImageUrl = async (s3Key: string): Promise<string> => {
     return s3Key;
   }
 
-  const identityId = await getIdentityId();
+  try {
+    const identityId = await getIdentityId();
 
-  const result = await getUrl({
-    path: `private/${identityId}/${s3Key}`,
-    options: { expiresIn: 3600 },
-  });
+    const result = await getUrl({
+      path: `private/${identityId}/${s3Key}`,
+      options: { expiresIn: 3600 },
+    });
 
-  return result.url.toString();
+    return result.url.toString();
+  } catch (error: any) {
+    // If we get an auth error, try refreshing the session and retry once
+    if (
+      error?.name === 'NotAuthorizedException' ||
+      error?.message?.includes('Invalid login token')
+    ) {
+      try {
+        // Attempt to refresh the session
+        const session = await fetchAuthSession({ forceRefresh: true });
+
+        if (!session.identityId) {
+          console.warn('Failed to refresh session: no identity ID');
+          return s3Key;
+        }
+
+        // Retry getting the URL with refreshed session
+        const result = await getUrl({
+          path: `private/${session.identityId}/${s3Key}`,
+          options: { expiresIn: 3600 },
+        });
+
+        return result.url.toString();
+      } catch (retryError) {
+        console.warn('Failed to get image URL after session refresh:', retryError);
+        // Return the s3Key as fallback - image just won't display
+        return s3Key;
+      }
+    }
+
+    // For other errors, log and return the s3Key as fallback
+    console.warn('Failed to get image URL:', error);
+    return s3Key;
+  }
 };
 
 /**

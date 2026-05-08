@@ -9,7 +9,6 @@ import { RootStackParamList, TabParamList } from '@/types';
 import { LocalUserProvider } from '@/context';
 import database from './database/index.native';
 import { BottomBar, LoadingState } from './components';
-import Gallery from './pages/Gallery';
 import AddDrink from './pages/AddDrink';
 import Stats from './pages/Stats';
 import DrinkDetail from './pages/DrinkDetail';
@@ -19,6 +18,7 @@ import Login from './pages/Login';
 import { syncFromCloud } from './services';
 import { useAuthStatus } from './hooks';
 import Explore from './pages/Explore';
+import Home from './pages/Home';
 
 try {
   configureAmplify();
@@ -48,7 +48,7 @@ const MainTabs: React.FC = () => (
   <Tab.Navigator
     screenOptions={{ headerShown: false }}
     tabBar={(props) => <BottomBar {...props} />}>
-    <Tab.Screen name="Gallery" component={Gallery} />
+    <Tab.Screen name="Home" component={Home} />
     <Tab.Screen name="AddDrink" component={AddDrink} />
     <Tab.Screen name="Stats" component={Stats} />
     <Tab.Screen name="Explore" component={Explore} />

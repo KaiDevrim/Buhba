@@ -5,6 +5,7 @@ import { getCachedImageUrl } from '../services';
 interface UseS3ImageResult {
   imageUrl: string | null;
   loading: boolean;
+  error: string | null;
   refetch: () => void;
 }
 
@@ -16,10 +17,12 @@ interface UseS3ImageResult {
 export const useS3Image = (s3Key: string | null, localUri?: string | null): UseS3ImageResult => {
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
 
   const refetch = useCallback(() => {
     setRefreshKey((prev) => prev + 1);
+    setError(null);
   }, []);
 
   useEffect(() => {
@@ -29,6 +32,7 @@ export const useS3Image = (s3Key: string | null, localUri?: string | null): UseS
       if (!s3Key) {
         setImageUrl(null);
         setLoading(false);
+        setError(null);
         return;
       }
 
@@ -37,6 +41,7 @@ export const useS3Image = (s3Key: string | null, localUri?: string | null): UseS
         if (mounted) {
           setImageUrl(localUri);
           setLoading(false);
+          setError(null);
         }
         return;
       }
@@ -46,11 +51,13 @@ export const useS3Image = (s3Key: string | null, localUri?: string | null): UseS
         if (mounted) {
           setImageUrl(s3Key);
           setLoading(false);
+          setError(null);
         }
         return;
       }
 
       setLoading(true);
+      setError(null);
 
       // Check if expo-image has already saved this file using the s3Key as the cacheKey
       try {
@@ -59,18 +66,34 @@ export const useS3Image = (s3Key: string | null, localUri?: string | null): UseS
           if (mounted) {
             setImageUrl(localPath.startsWith('file://') ? localPath : `file://${localPath}`);
             setLoading(false);
+            setError(null);
           }
           return;
         }
       } catch (err) {
-        console.log(err);
+        console.log('Cache path error:', err);
       }
 
-      const url = await getCachedImageUrl(s3Key);
+      try {
+        const url = await getCachedImageUrl(s3Key);
 
-      if (mounted) {
-        setImageUrl(url);
-        setLoading(false);
+        if (mounted) {
+          if (url) {
+            setImageUrl(url);
+            setError(null);
+          } else {
+            setImageUrl(null);
+            setError('Failed to load image URL - authentication may have expired');
+          }
+          setLoading(false);
+        }
+      } catch (err) {
+        if (mounted) {
+          console.warn('Error fetching image URL:', err);
+          setImageUrl(null);
+          setError('Failed to load image');
+          setLoading(false);
+        }
       }
     };
 
@@ -81,5 +104,5 @@ export const useS3Image = (s3Key: string | null, localUri?: string | null): UseS
     };
   }, [s3Key, localUri, refreshKey]);
 
-  return { imageUrl, loading, refetch };
+  return { imageUrl, loading, error, refetch };
 };

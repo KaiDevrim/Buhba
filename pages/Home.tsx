@@ -1,5 +1,6 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useState, useMemo } from 'react';
 import { View, FlatList, StyleSheet, TouchableOpacity, Text } from 'react-native';
+import { Q } from '@nozbe/watermelondb';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import database from '../database/index.native';
@@ -9,17 +10,26 @@ import { RootStackParamList } from '@/types';
 import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS, SHADOWS } from '@/constants';
 import { prefetchImages } from '../services';
 
-const Gallery: React.FC = () => {
+interface MonthlyStats {
+  drinkCount: number;
+  storeCount: number;
+  totalSpent: number;
+}
+
+const Home: React.FC = () => {
   const [drinks, setDrinks] = useState<Drink[]>([]);
   const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
 
   const fetchDrinks = useCallback(async () => {
     try {
-      const allDrinks = await database.collections.get<Drink>('drinks').query().fetch();
+      const allDrinks = await database.collections
+        .get<Drink>('drinks')
+        .query(Q.sortBy('date', Q.desc), Q.take(6))
+        .fetch();
       setDrinks(allDrinks);
 
       // Prefetch first 10 images for faster initial load
-      const s3Keys = allDrinks.slice(0, 10).map((d) => d.s3Key);
+      const s3Keys = allDrinks.slice(0, 6).map((d) => d.s3Key);
       prefetchImages(s3Keys).catch(() => {});
     } catch (error) {
       if (__DEV__) {
@@ -34,6 +44,27 @@ const Gallery: React.FC = () => {
     }, [fetchDrinks])
   );
 
+  // Calculate monthly stats
+  const monthlyStats: MonthlyStats = useMemo(() => {
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+
+    const thisMonthDrinks = drinks.filter((drink) => {
+      const drinkDate = new Date(drink.date);
+      return drinkDate.getMonth() === currentMonth && drinkDate.getFullYear() === currentYear;
+    });
+
+    const stores = new Set(thisMonthDrinks.map((d) => d.store));
+    const totalSpent = thisMonthDrinks.reduce((sum, d) => sum + d.price, 0);
+
+    return {
+      drinkCount: thisMonthDrinks.length,
+      storeCount: stores.size,
+      totalSpent,
+    };
+  }, [drinks]);
+
   const handleDrinkPress = useCallback(
     (drinkId: string) => {
       navigation.navigate('DrinkDetail', { drinkId });
@@ -41,7 +72,13 @@ const Gallery: React.FC = () => {
     [navigation]
   );
 
-  const keyExtractor = useCallback((item: Drink) => item.id, []);
+  const handleProfilePress = useCallback(() => {
+    navigation.navigate('Profile');
+  }, [navigation]);
+
+  const handleGalleryPress = useCallback(() => {
+    navigation.navigate('Gallery');
+  }, [navigation]);
 
   const renderItem = useCallback(
     ({ item }: { item: Drink }) => (
@@ -57,10 +94,56 @@ const Gallery: React.FC = () => {
     [handleDrinkPress]
   );
 
+  const keyExtractor = useCallback((item: Drink) => item.id, []);
+
+  const renderHeader = useCallback(
+    () => (
+      <View style={styles.headerContainer}>
+        {/* Top row with title and profile button */}
+        <View style={styles.topRow}>
+          <Text style={styles.pageTitle}>🧋 BobaPal</Text>
+          <TouchableOpacity style={styles.profileButton} onPress={handleProfilePress}>
+            <Text style={styles.profileButtonText}>👤</Text>
+          </TouchableOpacity>
+        </View>
+
+        <Text style={styles.headerTitle}>This Month</Text>
+        <View style={styles.statsRow}>
+          <View style={styles.statCard}>
+            <Text style={styles.statNumber}>{monthlyStats.drinkCount}</Text>
+            <Text style={styles.statLabel}>DRINKS</Text>
+          </View>
+          <View style={styles.statCard}>
+            <Text style={styles.statNumber}>{monthlyStats.storeCount}</Text>
+            <Text style={styles.statLabel}>STORES</Text>
+          </View>
+          <View style={styles.statCard}>
+            <Text style={styles.statNumber}>${monthlyStats.totalSpent.toFixed(2)}</Text>
+            <Text style={styles.statLabel}>SPENT</Text>
+          </View>
+        </View>
+
+        <View style={styles.sectionHeaderRow}>
+          <Text style={styles.sectionTitle}>Your Recent Drinks</Text>
+          <TouchableOpacity style={styles.galleryButton} onPress={handleGalleryPress}>
+            <Text style={styles.galleryButtonText}>See All</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    ),
+    [monthlyStats, handleProfilePress, handleGalleryPress]
+  );
+
   if (drinks.length === 0) {
     return (
       <GradientBackground>
         <View style={styles.container}>
+          <View style={styles.topRow}>
+            <Text style={styles.pageTitle}>🧋 BobaPal</Text>
+            <TouchableOpacity style={styles.profileButton} onPress={handleProfilePress}>
+              <Text style={styles.profileButtonText}>👤</Text>
+            </TouchableOpacity>
+          </View>
           <View style={styles.emptyContainer}>
             <Text style={styles.emptyTitle}>Your Boba Gallery</Text>
             <Text style={styles.emptyMessage}>Add some boba to see your collection!</Text>
@@ -85,6 +168,7 @@ const Gallery: React.FC = () => {
           maxToRenderPerBatch={10}
           windowSize={5}
           initialNumToRender={6}
+          ListHeaderComponent={renderHeader}
         />
       </View>
     </GradientBackground>
@@ -163,6 +247,26 @@ const styles = StyleSheet.create({
     color: COLORS.text.primary,
     marginBottom: SPACING.md,
   },
+  sectionHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: SPACING.md,
+  },
+  galleryButton: {
+    backgroundColor: COLORS.surface,
+    borderRadius: BORDER_RADIUS.full,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    paddingVertical: SPACING.xs,
+    paddingHorizontal: SPACING.md,
+    ...SHADOWS.sm,
+  },
+  galleryButtonText: {
+    color: COLORS.text.accent,
+    fontSize: FONT_SIZES.sm,
+    fontWeight: '600',
+  },
   row: {
     justifyContent: 'space-between',
     marginBottom: SPACING.xs,
@@ -188,4 +292,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default Gallery;
+export default Home;
