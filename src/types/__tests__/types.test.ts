@@ -17,23 +17,25 @@ describe('Type exports', () => {
         Profile: undefined,
         Login: undefined,
         Explore: undefined,
+        Gallery: undefined,
       };
       expect(routes).toBeDefined();
       expect(routes.MainTabs).toBeUndefined();
       expect(routes.DrinkDetail.drinkId).toBe('123');
       expect(routes.EditDrink.drinkId).toBe('123');
       expect(routes.Profile).toBeUndefined();
+      expect(routes.Gallery).toBeUndefined();
     });
 
     it('TabParamList has correct shape', () => {
       const tabs: TabParamList = {
-        Gallery: undefined,
+        Home: undefined,
         AddDrink: undefined,
         Stats: undefined,
         Explore: undefined,
       };
 
-      expect(tabs.Gallery).toBeUndefined();
+      expect(tabs.Home).toBeUndefined();
       expect(tabs.AddDrink).toBeUndefined();
       expect(tabs.Stats).toBeUndefined();
     });
