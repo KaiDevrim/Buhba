@@ -19,6 +19,7 @@ import { syncFromCloud } from './services';
 import { useAuthStatus } from './hooks';
 import Explore from './pages/Explore';
 import Home from './pages/Home';
+import { Gallery } from './pages';
 
 try {
   configureAmplify();
@@ -77,6 +78,7 @@ const AuthenticatedApp: React.FC<{ isLocalUser: boolean }> = ({ isLocalUser }) =
               <Stack.Screen name="EditDrink" component={EditDrink} />
               <Stack.Screen name="Profile" component={Profile} />
               <Stack.Screen name="Login" component={Login} />
+              <Stack.Screen name={"Gallery"} component={Gallery} />
             </Stack.Navigator>
           </NavigationContainer>
         </SafeAreaProvider>
